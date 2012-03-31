@@ -3,7 +3,7 @@
 --  as an exercise in learning lua
 ------------------------------------------------------
 
-require "game2"
+require "game"
 require "skin"
 
 local _paused = false
