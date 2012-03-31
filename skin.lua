@@ -40,14 +40,35 @@ function Skin:draw( game )
 	self:draw_cursor( c )
 end
 
+function Skin:draw_cubes( c )
+	local mysize = c.blocksize - 2 * c.blockmargin
+	for x=1,(c.size) do
+		for y=1,(c.size) do
+			local gem = c.game:get( {x=x, y=y} )
+
+			if gem and gem.id > 0 then
+				local color = self.colors[ gem.id ]
+				color[4] = (gem.clear == 0) and 255 or (255 * gem.clear)
+				love.graphics.setColor( color )
+				love.graphics.rectangle(
+						"fill",
+						((x-1)*c.blocksize)+c.shift + c.blockmargin + gem.dx * c.blocksize,
+						((y-1)*c.blocksize)+c.shift + c.blockmargin - gem.dy * c.blocksize,
+						mysize,
+						mysize )
+			end
+		end
+	end
+end
+
 function Skin:draw_grid( c )
 	left = c.shift
 	right = c.shift + c.fieldsize
 	top = left
 	bottom = right
 
-	rgb = 255 * 0.8
-	alpha = 255 * 0.75
+	rgb = 255 * 0.75
+	alpha = 255 * 0.60
 
 	love.graphics.setLineWidth( 2 )
 	love.graphics.setColor( rgb, rgb, rgb, alpha )
@@ -61,28 +82,33 @@ function Skin:draw_grid( c )
 	end
 end
 
-function Skin:draw_cubes( c )
-	mysize = c.blocksize - 2 * c.blockmargin
-	for x=0,(c.size-1) do
-		for y=0,(c.size-1) do
-			love.graphics.setColor( self.colors[ (x+y) % #self.colors + 1 ] )
-			love.graphics.rectangle(
-					"fill",
-					(x*c.blocksize)+c.shift + c.blockmargin,
-					(y*c.blocksize)+c.shift + c.blockmargin,
-					mysize,
-					mysize )
-		end
-	end
-end
-
 function Skin:draw_cursor( c )
-	length = pressed and 1.0 or 0.25
-	alpha  = pressed and 1.0 or 0.50
+	local left   = c.shift + ( c.game.cursor.x - 1 ) * c.blocksize
+	local top    = c.shift + ( c.game.cursor.y - 1 ) * c.blocksize
+	local right  = left + c.blocksize
+	local bottom = top + c.blocksize
 
-	love.graphics.setLineWidth( 5.0 )
-	love.graphics.setColor( 1, 1, 1, alpha )
+	local pressed = c.game:is_pressed()
 
-	-- TODO
+	love.graphics.setLineWidth( 6.0 )
+	love.graphics.setColor( 255, 255, 255, pressed and 255 or 255 )
+
+	--print( "Drawing cursor: left=" .. left .. " right=" .. right .. " top=" .. top .. " bot=" .. bottom )
+
+	if pressed then
+		love.graphics.line(
+			left, top,
+			left, bottom,
+			right, bottom,
+			right, top,
+			left, top
+		)
+	else
+		local length = 0.25 * c.blocksize
+		love.graphics.line( left, top + length, left, top, left + length, top )
+		love.graphics.line( right - length, top, right, top, right, top + length )
+		love.graphics.line( right, bottom - length, right, bottom, right - length, bottom )
+		love.graphics.line( left + length, bottom, left, bottom, left, bottom - length )
+	end
 end
 

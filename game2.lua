@@ -1,86 +1,489 @@
 require "math"
 
-Cursor = {}
+Point = {}
 Block = {}
 Game = {}
 
-local boardsize = 7
+local ClearSize = 3
+local BoardSize = 7
+local SwapRate  = 6.0
+local FallRate  = 6.0
+local ClearRate = 4.0
 
-local key = function ( x, y )
-	return x .. "_" .. y
+local ignore = function () --[[ nothing ]] end
+
+local update_delta = function (value, rate)
+	if value > 0 then
+		value = value - rate
+		if value < 0 then value = 0 end
+	elseif value < 0 then
+		value = value + rate
+		if value > 0 then value = 0 end
+	end
+	return value
 end
 
 -- --------------------------------------------------------------------
 
 -- cursor = { pressed, x, y }
-function Cursor:new()
-	o = { pressed = false, x = boardsize/2, y = boardsize/2 }
+function Point:new( copy )
+	if copy then
+		o = { x = copy.x, y = copy.y }
+	else
+		o = { x = math.floor( BoardSize/2 ), y = math.floor( BoardSize/2 ) }
+	end
 	setmetatable( o, self )
 	self.__index = self
 	return o
 end
 
--- --------------------------------------------------------------------
+function Point:left()
+	if self.x > 1 then
+		self.x = self.x - 1
+		return true
+	end
+	return false
+end
 
-function Block:new()
-	o = o or {}
-	o.id = self.id or math.random( 1, boardsize )
+function Point:right()
+	if self.x < BoardSize then
+		self.x = self.x + 1
+		return true
+	end
+	return false
+end
+
+function Point:up()
+	if self.y > 1 then
+		self.y = self.y - 1
+		return true
+	end
+	return false
+end
+
+function Point:down()
+	if self.y < BoardSize then
+		self.y = self.y + 1
+		return true
+	end
+	return false
+end
+
+-- --------------------------------------------------------------------
+BlockStates = {
+	dead  = { update = ignore },
+	idle  = { update = ignore },
+
+	swap  = {
+		update =
+			function (block, dt)
+				if block:update_swap( dt ) then
+					return true
+				end
+				block:goto( "idle" )
+				return false
+			end
+	},
+
+	clear = {
+		update =
+			function (block, dt)
+				if block:update_clear( dt ) then
+					return true
+				end
+				block:goto( "dead" )
+				return false
+			end
+	},
+
+	fall  = {
+		update =
+			function (block, dt)
+				if block:update_fall( dt ) then
+					return true
+				end
+				block:goto( "idle" )
+				return false
+			end
+	},
+
+	dead = { update = ignore },
+}
+
+function Block:new( copy )
+	o = {
+		id = math.random( 1, BoardSize ),
+		dx = 0,
+		dy = 0,
+		clear = 0,
+		state = BlockStates[ "idle" ],
+		key = ""
+	}
+	if copy then
+		-- only copy the type
+		o.id = copy.id
+	end
+
 	setmetatable( o, self )
 	self.__index = self
 	return o
 end
 
+function Block:is_alive()
+	return self and (self.id ~= 0)
+end
+
+function Block:update( dt )
+	return self.state.update( self, dt )
+end
+
+function Block:goto( state )
+	if self.state == BlockStates[ state ] then
+		return
+	end
+
+	self.state = BlockStates[ state ]
+
+	if state == "idle" then
+		self.clear = 0
+		self.dx = 0
+		self.dy = 0
+	elseif state == "swap" then
+		self.clear = 0
+	elseif state == "clear" then
+		self.dx = 0
+		self.dy = 0
+		self.clear = 1.0
+	elseif state == "fall" then
+		self.dx = 0
+		self.clear = 0
+	elseif state == "dead" then
+		self.id = 0
+		self.dx = 0
+		self.dy = 0
+		self.clear = 0
+	end
+	print( "Block[" .. self.key .. "]: state=" .. state .. " dx=" .. self.dx .. " dy=" .. self.dy .. " clear=" .. self.clear )
+end
+
+function Block:swap( left, right )
+	self.dx = ( left.x - right.x )
+	self.dy = ( right.y - left.y )
+	self:goto( "swap" )
+	print( "Block.swap( dx=", self.dx, "dy=", self.dy )
+end
+
+function Block:drop( dy )
+	self.dy = dy
+	self:goto( "fall" )
+end
+
+function Block:update_swap( dt )
+	self.dx = update_delta( self.dx, dt * SwapRate )
+	self.dy = update_delta( self.dy, dt * SwapRate )
+	return (self.dx ~= 0) or (self.dy ~= 0)
+end
+
+function Block:update_clear( dt )
+	self.clear = update_delta( self.clear, dt * ClearRate )
+	return self.clear ~= 0
+end
+
+function Block:update_fall( dt )
+	self.dy = update_delta( self.dy, dt * FallRate )
+	return self.dy ~= 0
+end
+
 -- --------------------------------------------------------------------
-function Game:get( x, y )
-	return self.gems[ key(x,y) ]
-end
+GameStates = {
+	idle = {
+		move   = function (game,dir) game:do_move( dir ) end,
+		press  = function (game) game:goto( "set" ) end,
+		clear  = ignore,
+		toggle = function (game) game:goto( "set" ) end,
+		update = ignore,
+	},
 
-function Game:set( x, y, value )
-	self.gems[ key(x, y) ] = value
-end
+	set = {
+		move =
+			function (game, dir)
+				if game:do_swap( dir ) then
+					game:goto( "swap" )
+				end
+			end,
+		press  = ignored,
+		clear  = function (game) game:goto( "idle" ) end,
+		toggle = function (game) game:goto( "idle" ) end,
+		update = ignore,
+	},
 
-function Game:size()
-	return boardsize
-end
+	swap = {
+		move   = function (game, dir) game:do_move( dir ) end,
+		press  = ignore,
+		clear  = ignore,
+		toggle = ignore,
+		update =
+			function (game, dt)
+				if not game:update_all( dt ) then
+					if game:check_matches() then
+						game:goto( "clear" )
+					else
+						game:do_revert()
+						game:goto( "revert" )
+					end
+				end
+			end
+	},
 
-function Game:move( dir )
-	-- left, right, up, or down
-	-- TODO
-end
+	revert = {
+		move   = function (game, dir) game:do_move( dir ) end,
+		press  = ignore,
+		clear  = ignore,
+		toggle = ignore,
+		update =
+			function (game, dt)
+				if not game:update_all( dt ) then
+					game:goto( "idle" )
+				end
+			end
+	},
 
-function Game:cursorpress()
-	-- TODO
-end
+	clear = {
+		move   = function (game, dir) game:do_move( dir ) end,
+		press  = ignore,
+		clear  = ignore,
+		toggle = ignore,
+		update =
+			function (game, dt)
+				if not game:update_all( dt ) then
+					game:mark_falling()
+					game:fill_cleared()
+					game:goto( "fall" )
+				end
+			end
+	},
 
-function Game:cursorclear()
-	-- TODO
-end
-
-function Game:cursortoggle()
-	-- TODO
-end
-
-function Game:update(dt)
-	-- TODO
-end
-
-function Game:draw()
-	-- TODO
-end
+	fall = {
+		move   = function (game, dir) game:do_move( dir ) end,
+		press  = ignore,
+		clear  = ignore,
+		toggle = ignore,
+		update =
+			function (game, dt)
+				if not game:update_all( dt ) then
+					if game:check_matches() then
+						game:goto( "clear" )
+					else
+						game:goto( "idle" )
+					end
+				end
+			end
+	},
+}
 
 function Game:new( o )
 	o = o or {}
 	setmetatable( o, self )
 	self.__index = self
 
-	o.cursor = Cursor:new()
+	o.cursor = Point:new()
+	o.previous = Point:new()
+	o.previous.x = o.previous.x + 1
+
 	o.gems = {}
-	for x = 1, boardsize do
-		for y = 1, boardsize do
-			o:set( x, y, Block:new() )
+	for x = 1, BoardSize do
+		for y = 1, BoardSize do
+			o:set( {x=x, y=y}, Block:new() )
 		end
 	end
 
+	o.state = GameStates["idle"]
+	o.statetime = 0
+	o.statename = ""
+
+	print( "Initializing board ..." )
+	o:goto( "swap" )
+	while o.statename ~= "idle" do
+		o:update( 1000.0 )
+	end
+	print( "Finished initializing board." )
 	return o
+end
+
+function Game:get( p )
+	return self.gems[ p.x .. "_" .. p.y ]
+end
+
+function Game:set( p, value )
+	local key = p.x .. "_" .. p.y
+	if value then
+		value.key = key
+	end
+	self.gems[ key ] = value
+end
+
+function Game:size()
+	return BoardSize
+end
+
+function Game:move( dir )
+	self.state.move( self, dir )
+end
+
+function Game:cursorpress()
+	self.state.press( self )
+end
+
+function Game:cursorclear()
+	self.state.clear( self )
+end
+
+function Game:cursortoggle()
+	self.state.toggle( self )
+end
+
+function Game:update( dt )
+	self.statetime = self.statetime + dt
+	self.state.update( self, dt )
+end
+
+function Game:goto( state )
+	newstate = GameStates[ state ]
+	if not newstate then
+		print( "ERROR: cannot transition to invalid state '" .. state .. "'" )
+	elseif self.state ~= newstate then
+		print( "GAME.state = " .. state )
+		self.state = newstate
+		self.statetime = 0
+		self.statename = state
+	end
+end
+
+function Game:is_pressed()
+	return self.state == GameStates[ "set" ]
+end
+
+function Game:update_all( dt )
+	result = false
+	for _,gem in pairs( self.gems ) do
+		if gem:update( dt ) then
+			result = true
+		end
+	end
+	return result
+end
+
+function Game:do_move( dir )
+	if self.cursor[ dir ] then
+		self.cursor[ dir ]( self.cursor )
+	end
+end
+
+function Game:do_swap( dir )
+	local tmp = Point:new( self.cursor )
+	local func = tmp[dir]
+	if func and func( tmp ) then
+		self.previous = tmp
+		self:do_revert()
+		return true
+	end
+	return false
+end
+
+function Game:do_revert()
+	local gem1 = self:get( self.cursor )
+	local gem2 = self:get( self.previous )
+
+	gem1:swap( self.cursor, self.previous )
+	gem2:swap( self.previous, self.cursor )
+	
+	self:set( self.cursor, gem2 )
+	self:set( self.previous, gem1 )
+
+	self.cursor, self.previous = self.previous, self.cursor
+end
+
+function Game:scan_for_matches( flipped )
+	local found = false
+
+	local make_point = function ( col, row )
+		return { x = flipped and row or col, y = flipped and col or row }
+	end
+
+	for row = 1,BoardSize do
+		local id = -1
+		local count = 0
+
+		for col = 1, BoardSize do
+			local gem = self:get( make_point( col, row ) )
+
+			if not gem then
+				id = -1
+				count = 0
+			elseif gem.id ~= id then
+				id = gem.id
+				count = 1
+			else
+				count = count + 1
+				if count == ClearSize then
+					found = true
+					for col2 = (col - count + 1), col do
+						self:get( make_point( col2, row ) ):goto( "clear" )
+					end
+				elseif count > ClearSize then
+					gem:goto( "clear" )
+				else
+					-- not enough for clear yet
+				end
+			end
+		end
+	end
+
+	return found
+end
+
+function Game:check_matches()
+	local horiz = self:scan_for_matches( false )
+	local vert  = self:scan_for_matches( true )
+	return horiz or vert
+end
+
+function Game:mark_falling()
+	local x, y, shift
+
+	for x = 1,BoardSize do
+		shift = 0
+		for y = BoardSize,1,-1 do
+			local gem = self:get( { x=x, y=y } )
+
+			if not ( gem and gem:is_alive() ) then
+				shift = shift + 1
+			elseif shift > 0 then
+				self:set( {x=x,y=y}, nil )
+				self:set( {x=x, y=(y + shift)}, gem )
+				gem:drop( shift )
+			end
+		end
+	end
+end
+
+function Game:fill_cleared()
+	for x = 1,BoardSize do
+		local start = -1
+		for y = BoardSize,1,-1 do
+			local p = { x=x, y=y }
+			local gem = self:get( p )
+
+			if not ( gem and gem:is_alive() ) then
+				if start < 0 then
+					start = BoardSize - p.y
+				end
+
+				gem = Block:new()
+				gem:drop( BoardSize - start )
+				self:set( p, gem )
+			end
+		end
+	end
 end
 

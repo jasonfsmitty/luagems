@@ -16,6 +16,7 @@ function love.load()
 	-- setup
 	love.graphics.setBackgroundColor( 0, 0, 0 )
 
+	print( "Loading game and skin ..." )
 	_game = Game:new()
 	_skin = Skin:new()
 end
@@ -27,8 +28,16 @@ function love.focus(f)
 end
 
 function love.keypressed( key )
-	if key == "escape" then
-		love.event.quit()
+	local keys = {}
+	keys[ "escape" ] = function () love.event.quit() end
+	keys[ "left"   ] = function () _game:move( "left" ) end
+	keys[ "right"  ] = function () _game:move( "right" ) end
+	keys[ "up"     ] = function () _game:move( "up" ) end
+	keys[ "down"   ] = function () _game:move( "down" ) end
+	keys[ " "      ] = function () _game:cursortoggle() end
+
+	if keys[ key ] then
+		keys[key]()
 	end
 end
 
@@ -48,6 +57,5 @@ end
 function love.draw()
 	-- todo
 	_skin:draw( _game )
-	love.graphics.print( "Hello World", 400, 300 )
 end
 
