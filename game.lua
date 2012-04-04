@@ -14,6 +14,8 @@ local ClearRate = 5.0
 
 local ignore = function () --[[ nothing ]] end
 
+local key = function (x,y) return x .. "_" .. y end
+
 local update_delta = function (value, rate)
 	if value > 0 then
 		value = value - rate
@@ -200,12 +202,36 @@ end
 GameStates = {
 	idle = {
 		enter  = function (game) game.score:idle() end,
-
 		move   = function (game,dir) game:do_move( dir ) end,
+		rotate =
+			function (game,dir)
+				if game:do_rotate( dir ) then
+					game:goto( "rotate" )
+				end
+			end,
 		press  = function (game) game:goto( "set" ) end,
 		clear  = ignore,
 		toggle = function (game) game:goto( "set" ) end,
 		update = ignore,
+	},
+
+	rotate = {
+		enter   = ignore,
+		move    = ignore,
+		rotate  = ignore,
+		press   = ignore,
+		clear   = ignore,
+		toggle  = ignore,
+		update  =
+			function (game, dt)
+				if not game:update_rotate( dt ) then
+					if game:mark_falling() then
+						game:goto( "fall" )
+					else
+						game:goto( "idle" )
+					end
+				end
+			end
 	},
 
 	set = {
@@ -215,6 +241,7 @@ GameStates = {
 					game:goto( "swap" )
 				end
 			end,
+		rotate = ignored,
 		press  = ignored,
 		clear  = function (game) game:goto( "idle" ) end,
 		toggle = function (game) game:goto( "idle" ) end,
@@ -223,6 +250,7 @@ GameStates = {
 
 	swap = {
 		move   = function (game, dir) game:do_move( dir ) end,
+		rotate = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -241,6 +269,7 @@ GameStates = {
 
 	revert = {
 		move   = function (game, dir) game:do_move( dir ) end,
+		rotate = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -254,6 +283,7 @@ GameStates = {
 
 	clear = {
 		move   = function (game, dir) game:do_move( dir ) end,
+		rotate = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -269,6 +299,7 @@ GameStates = {
 
 	fall = {
 		move   = function (game, dir) game:do_move( dir ) end,
+		rotate = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -319,15 +350,15 @@ function Game:new( o )
 end
 
 function Game:get( p )
-	return self.gems[ p.x .. "_" .. p.y ]
+	return self.gems[ key( p.x, p.y ) ]
 end
 
 function Game:set( p, value )
-	local key = p.x .. "_" .. p.y
+	local k = key( p.x, p.y )
 	if value then
-		value.key = key
+		value.key = k
 	end
-	self.gems[ key ] = value
+	self.gems[ k ] = value
 end
 
 function Game:size()
@@ -336,6 +367,10 @@ end
 
 function Game:move( dir )
 	self.state.move( self, dir )
+end
+
+function Game:rotate( dir )
+	self.state.rotate( self, dir )
 end
 
 function Game:cursorpress()
@@ -389,6 +424,44 @@ function Game:do_move( dir )
 	if self.cursor[ dir ] then
 		self.cursor[ dir ]( self.cursor )
 	end
+end
+
+function Game:do_rotate( dir )
+	if dir == "right" then
+		local copy = self.gems
+		local x, y, cx, cy
+		self.gems = {}
+
+		for x=1,BoardSize do
+			for y=1,BoardSize do
+				cx = y
+				cy = BoardSize - x + 1
+				self:set( {x=x, y=y}, copy[ key( cx, cy ) ] )
+			end
+		end
+		copy = nil
+	elseif dir == "left" then
+		local copy = self.gems
+		local x, y, cx, cy
+		self.gems = {}
+
+		for x=1,BoardSize do
+			for y=1,BoardSize do
+				cx = BoardSize - y + 1
+				cy = x
+				self:set( {x=x, y=y}, copy[ key( cx, cy ) ] )
+			end
+		end
+		copy = nil
+	else
+		print( "ERROR: Invalid game rotate direction '" .. dir .. "'" )
+		return false
+	end
+	return true
+end
+
+function Game:update_rotate( dt )
+	return false
 end
 
 function Game:do_swap( dir )
@@ -472,6 +545,7 @@ end
 
 function Game:mark_falling()
 	local x, y, shift
+	local found = false
 
 	for x = 1,BoardSize do
 		shift = 0
@@ -484,9 +558,12 @@ function Game:mark_falling()
 				self:set( {x=x,y=y}, nil )
 				self:set( {x=x, y=(y + shift)}, gem )
 				gem:drop( shift )
+				found = true
 			end
 		end
 	end
+
+	return found
 end
 
 function Game:fill_cleared()

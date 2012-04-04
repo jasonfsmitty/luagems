@@ -36,6 +36,14 @@ function love.keypressed( key )
 	keys[ "down"   ] = function () _game:move( "down" ) end
 	keys[ " "      ] = function () _game:cursortoggle() end
 
+	keys[ "w" ] = keys[ "up" ]
+	keys[ "a" ] = keys[ "left" ]
+	keys[ "s" ] = keys[ "down" ]
+	keys[ "d" ] = keys[ "right" ]
+
+	keys[ "q" ] = function () _game:rotate( "left" ) end
+	keys[ "e" ] = function () _game:rotate( "right" ) end
+
 	if keys[ key ] then
 		keys[key]()
 	end
