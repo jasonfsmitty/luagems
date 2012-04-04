@@ -1,14 +1,16 @@
 require "math"
+require "score"
 
 Point = {}
 Block = {}
 Game = {}
 
+local NumBlockTypes = 7
 local ClearSize = 3
-local BoardSize = 7
-local SwapRate  = 6.0
-local FallRate  = 6.0
-local ClearRate = 4.0
+local BoardSize = 8
+local SwapRate  = 10.0
+local FallRate  = 10.0
+local ClearRate = 5.0
 
 local ignore = function () --[[ nothing ]] end
 
@@ -112,7 +114,7 @@ BlockStates = {
 
 function Block:new( copy )
 	o = {
-		id = math.random( 1, BoardSize ),
+		id = math.random( 1, NumBlockTypes ),
 		dx = 0,
 		dy = 0,
 		clear = 0,
@@ -163,14 +165,14 @@ function Block:goto( state )
 		self.dy = 0
 		self.clear = 0
 	end
-	print( "Block[" .. self.key .. "]: state=" .. state .. " dx=" .. self.dx .. " dy=" .. self.dy .. " clear=" .. self.clear )
+	--print( "Block[" .. self.key .. "]: state=" .. state .. " dx=" .. self.dx .. " dy=" .. self.dy .. " clear=" .. self.clear )
 end
 
 function Block:swap( left, right )
 	self.dx = ( left.x - right.x )
 	self.dy = ( right.y - left.y )
 	self:goto( "swap" )
-	print( "Block.swap( dx=", self.dx, "dy=", self.dy )
+	print( string.format( "Block.swap( dx=%i, dy=%i )", self.dx, self.dy ) )
 end
 
 function Block:drop( dy )
@@ -197,6 +199,8 @@ end
 -- --------------------------------------------------------------------
 GameStates = {
 	idle = {
+		enter  = function (game) game.score:idle() end,
+
 		move   = function (game,dir) game:do_move( dir ) end,
 		press  = function (game) game:goto( "set" ) end,
 		clear  = ignore,
@@ -301,11 +305,15 @@ function Game:new( o )
 	o.statetime = 0
 	o.statename = ""
 
+	o.score = Score:new()
+
 	print( "Initializing board ..." )
 	o:goto( "swap" )
 	while o.statename ~= "idle" do
 		o:update( 1000.0 )
 	end
+	o.score:reset()
+
 	print( "Finished initializing board." )
 	return o
 end
@@ -352,10 +360,14 @@ function Game:goto( state )
 	if not newstate then
 		print( "ERROR: cannot transition to invalid state '" .. state .. "'" )
 	elseif self.state ~= newstate then
-		print( "GAME.state = " .. state )
+		print( string.format( "GAME.state = %s", state ) )
 		self.state = newstate
 		self.statetime = 0
 		self.statename = state
+
+		if self.state.enter then
+			self.state.enter( self )
+		end
 	end
 end
 
@@ -414,12 +426,15 @@ function Game:scan_for_matches( flipped )
 		local id = -1
 		local count = 0
 
+		local scorer = Scorer:new( self.score )
+
 		for col = 1, BoardSize do
 			local gem = self:get( make_point( col, row ) )
 
 			if not gem then
 				id = -1
 				count = 0
+				scorer:flush()
 			elseif gem.id ~= id then
 				id = gem.id
 				count = 1
@@ -428,23 +443,30 @@ function Game:scan_for_matches( flipped )
 				if count == ClearSize then
 					found = true
 					for col2 = (col - count + 1), col do
-						self:get( make_point( col2, row ) ):goto( "clear" )
+						local tmp = self:get( make_point( col2, row ) )
+						scorer:add( tmp )
+						tmp:goto( "clear" )
 					end
 				elseif count > ClearSize then
+					scorer:add( gem )
 					gem:goto( "clear" )
 				else
 					-- not enough for clear yet
 				end
 			end
 		end
+
+		scorer:flush()
 	end
 
 	return found
 end
 
 function Game:check_matches()
+	self.score:start()
 	local horiz = self:scan_for_matches( false )
 	local vert  = self:scan_for_matches( true )
+	self.score:stop()
 	return horiz or vert
 end
 

@@ -62,16 +62,21 @@ function Skin:draw_cubes( c )
 end
 
 function Skin:draw_grid( c )
-	left = c.shift
-	right = c.shift + c.fieldsize
-	top = left
-	bottom = right
+	local left = c.shift
+	local right = c.shift + c.fieldsize
+	local top = left
+	local bottom = right
 
-	rgb = 255 * 0.75
-	alpha = 255 * 0.60
+	local rgb = 255 * 0.7
+	local alpha = 255 * 0.55
 
-	love.graphics.setLineWidth( 2 )
 	love.graphics.setColor( rgb, rgb, rgb, alpha )
+	love.graphics.rectangle( 'fill', left, top, c.fieldsize, c.fieldsize )
+
+	rgb = 255 * 0.8
+	alpha = 255 * 0.75
+	love.graphics.setColor( rgb, rgb, rgb, alpha )
+	love.graphics.setLineWidth( 2 )
 	for x=0, c.size do
 		for y=0, c.size do
 			x1 = left + ( x * c.blocksize )
