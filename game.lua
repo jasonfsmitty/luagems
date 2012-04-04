@@ -11,6 +11,7 @@ local BoardSize = 8
 local SwapRate  = 10.0
 local FallRate  = 10.0
 local ClearRate = 5.0
+local RotateRate = 4.0
 
 local ignore = function () --[[ nothing ]] end
 
@@ -336,6 +337,7 @@ function Game:new( o )
 	o.statetime = 0
 	o.statename = ""
 
+	o.rotation = 0
 	o.score = Score:new()
 
 	print( "Initializing board ..." )
@@ -440,6 +442,7 @@ function Game:do_rotate( dir )
 			end
 		end
 		copy = nil
+		self.rotation = 1.0
 	elseif dir == "left" then
 		local copy = self.gems
 		local x, y, cx, cy
@@ -453,6 +456,7 @@ function Game:do_rotate( dir )
 			end
 		end
 		copy = nil
+		self.rotation = -1.0
 	else
 		print( "ERROR: Invalid game rotate direction '" .. dir .. "'" )
 		return false
@@ -461,7 +465,8 @@ function Game:do_rotate( dir )
 end
 
 function Game:update_rotate( dt )
-	return false
+	self.rotation = update_delta( self.rotation, dt * RotateRate )
+	return self.rotation ~= 0
 end
 
 function Game:do_swap( dir )

@@ -34,14 +34,33 @@ function Skin:draw( game )
 	c.fieldsize   = c.screensize - ( 2 * c.shift )
 	c.blocksize   = c.fieldsize / c.size
 	c.blockmargin = c.blocksize * 0.10
+	c.rotation    = c.game.rotation and c.game.rotation or 0
+
+	love.graphics.push()
+
+	if c.rotation ~= 0 then
+		local s = c.shift + c.blockmargin + c.fieldsize / 2
+		love.graphics.translate( s, s )
+		love.graphics.rotate( -c.rotation * math.pi / 2 )
+		love.graphics.translate( -s, -s )
+	end
 
 	self:draw_grid( c )
 	self:draw_cubes( c )
-	self:draw_cursor( c )
+
+	love.graphics.pop()
+
+	if c.rotation == 0 then
+		self:draw_cursor( c )
+	end
 end
 
 function Skin:draw_cubes( c )
+	love.graphics.push()
+
 	local mysize = c.blocksize - 2 * c.blockmargin
+	local shift  = c.shift + c.blockmargin
+
 	for x=1,(c.size) do
 		for y=1,(c.size) do
 			local gem = c.game:get( {x=x, y=y} )
@@ -52,13 +71,15 @@ function Skin:draw_cubes( c )
 				love.graphics.setColor( color )
 				love.graphics.rectangle(
 						"fill",
-						((x-1)*c.blocksize)+c.shift + c.blockmargin + gem.dx * c.blocksize,
-						((y-1)*c.blocksize)+c.shift + c.blockmargin - gem.dy * c.blocksize,
+						((x-1)*c.blocksize) + shift + gem.dx * c.blocksize,
+						((y-1)*c.blocksize) + shift - gem.dy * c.blocksize,
 						mysize,
 						mysize )
 			end
 		end
 	end
+
+	love.graphics.pop()
 end
 
 function Skin:draw_grid( c )
