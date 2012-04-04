@@ -242,8 +242,8 @@ GameStates = {
 					game:goto( "swap" )
 				end
 			end,
-		rotate = ignored,
-		press  = ignored,
+		rotate = ignore,
+		press  = ignore,
 		clear  = function (game) game:goto( "idle" ) end,
 		toggle = function (game) game:goto( "idle" ) end,
 		update = ignore,
@@ -429,34 +429,28 @@ function Game:do_move( dir )
 end
 
 function Game:do_rotate( dir )
-	if dir == "right" then
+	if dir == "right" or dir == "left" then
+		local flipped = ( dir == "left" )
+
 		local copy = self.gems
 		local x, y, cx, cy
 		self.gems = {}
 
 		for x=1,BoardSize do
 			for y=1,BoardSize do
-				cx = y
-				cy = BoardSize - x + 1
+				cx = flipped and ( BoardSize - y + 1 ) or y
+				cy = flipped and x or ( BoardSize - x + 1 )
 				self:set( {x=x, y=y}, copy[ key( cx, cy ) ] )
 			end
 		end
 		copy = nil
-		self.rotation = 1.0
-	elseif dir == "left" then
-		local copy = self.gems
-		local x, y, cx, cy
-		self.gems = {}
+		self.rotation = flipped and -1.0 or 1.0
 
-		for x=1,BoardSize do
-			for y=1,BoardSize do
-				cx = BoardSize - y + 1
-				cy = x
-				self:set( {x=x, y=y}, copy[ key( cx, cy ) ] )
-			end
-		end
-		copy = nil
-		self.rotation = -1.0
+		-- flip the cursor as well
+		x = self.cursor.x
+		y = self.cursor.y
+		self.cursor.x = flipped and y or (BoardSize - y + 1)
+		self.cursor.y = flipped and (BoardSize - x + 1) or x
 	else
 		print( "ERROR: Invalid game rotate direction '" .. dir .. "'" )
 		return false

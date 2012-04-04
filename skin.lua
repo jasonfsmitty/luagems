@@ -47,12 +47,9 @@ function Skin:draw( game )
 
 	self:draw_grid( c )
 	self:draw_cubes( c )
+	self:draw_cursor( c )
 
 	love.graphics.pop()
-
-	if c.rotation == 0 then
-		self:draw_cursor( c )
-	end
 end
 
 function Skin:draw_cubes( c )
