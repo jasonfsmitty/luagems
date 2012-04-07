@@ -44,6 +44,8 @@ function love.keypressed( key )
 	keys[ "q" ] = function () _game:rotate( "left" ) end
 	keys[ "e" ] = function () _game:rotate( "right" ) end
 
+	keys[ "f" ] = function () _game:fill() end
+
 	if keys[ key ] then
 		keys[key]()
 	end

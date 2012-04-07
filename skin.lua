@@ -111,7 +111,7 @@ function Skin:draw_cursor( c )
 	local right  = left + c.blocksize
 	local bottom = top + c.blocksize
 
-	local pressed = c.game:is_pressed()
+	local pressed = c.game:is_cursor_pressed()
 
 	love.graphics.setLineWidth( 6.0 )
 	love.graphics.setColor( 255, 255, 255, pressed and 255 or 255 )

@@ -210,9 +210,25 @@ GameStates = {
 					game:goto( "rotate" )
 				end
 			end,
-		press  = function (game) game:goto( "set" ) end,
+		fill =
+			function (game)
+				if game:fill_cleared() then
+					game:goto( "fall" )
+				end
+			end,
+		press =
+			function (game)
+				if game:is_cursor_valid() then
+					game:goto( "set" )
+				end
+			end,
 		clear  = ignore,
-		toggle = function (game) game:goto( "set" ) end,
+		toggle = 
+			function (game)
+				if game:is_cursor_valid() then
+					game:goto( "set" )
+				end
+			end,
 		update = ignore,
 	},
 
@@ -220,6 +236,7 @@ GameStates = {
 		enter   = ignore,
 		move    = ignore,
 		rotate  = ignore,
+		fill    = ignore,
 		press   = ignore,
 		clear   = ignore,
 		toggle  = ignore,
@@ -243,6 +260,7 @@ GameStates = {
 				end
 			end,
 		rotate = ignore,
+		fill   = ignore,
 		press  = ignore,
 		clear  = function (game) game:goto( "idle" ) end,
 		toggle = function (game) game:goto( "idle" ) end,
@@ -252,6 +270,7 @@ GameStates = {
 	swap = {
 		move   = function (game, dir) game:do_move( dir ) end,
 		rotate = ignore,
+		fill   = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -271,6 +290,7 @@ GameStates = {
 	revert = {
 		move   = function (game, dir) game:do_move( dir ) end,
 		rotate = ignore,
+		fill   = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -285,6 +305,7 @@ GameStates = {
 	clear = {
 		move   = function (game, dir) game:do_move( dir ) end,
 		rotate = ignore,
+		fill   = ignore,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -292,7 +313,7 @@ GameStates = {
 			function (game, dt)
 				if not game:update_all( dt ) then
 					game:mark_falling()
-					game:fill_cleared()
+					--game:fill_cleared()
 					game:goto( "fall" )
 				end
 			end
@@ -301,6 +322,7 @@ GameStates = {
 	fall = {
 		move   = function (game, dir) game:do_move( dir ) end,
 		rotate = ignore,
+		fill   = function (game) game:fill_cleared() end,
 		press  = ignore,
 		clear  = ignore,
 		toggle = ignore,
@@ -343,6 +365,7 @@ function Game:new( o )
 	print( "Initializing board ..." )
 	o:goto( "swap" )
 	while o.statename ~= "idle" do
+		o:fill_cleared()
 		o:update( 1000.0 )
 	end
 	o.score:reset()
@@ -373,6 +396,12 @@ end
 
 function Game:rotate( dir )
 	self.state.rotate( self, dir )
+end
+
+function Game:fill()
+	if self.state.fill then
+		self.state.fill( self )
+	end
 end
 
 function Game:cursorpress()
@@ -408,8 +437,13 @@ function Game:goto( state )
 	end
 end
 
-function Game:is_pressed()
+function Game:is_cursor_pressed()
 	return self.state == GameStates[ "set" ]
+end
+
+function Game:is_cursor_valid()
+	local gem = self:get( self.cursor )
+	return gem and ( gem.id > 0 )
 end
 
 function Game:update_all( dt )
@@ -468,8 +502,7 @@ function Game:do_swap( dir )
 	local func = tmp[dir]
 	if func and func( tmp ) then
 		self.previous = tmp
-		self:do_revert()
-		return true
+		return self:do_revert()
 	end
 	return false
 end
@@ -478,6 +511,9 @@ function Game:do_revert()
 	local gem1 = self:get( self.cursor )
 	local gem2 = self:get( self.previous )
 
+	if not gem1 or not gem2 then return false end
+	if (gem1.id == 0) or (gem2.id == 0) then return false end
+
 	gem1:swap( self.cursor, self.previous )
 	gem2:swap( self.previous, self.cursor )
 	
@@ -485,6 +521,8 @@ function Game:do_revert()
 	self:set( self.previous, gem1 )
 
 	self.cursor, self.previous = self.previous, self.cursor
+
+	return true
 end
 
 function Game:scan_for_matches( flipped )
@@ -504,6 +542,10 @@ function Game:scan_for_matches( flipped )
 			local gem = self:get( make_point( col, row ) )
 
 			if not gem then
+				id = -1
+				count = 0
+				scorer:flush()
+			elseif gem.id == 0 then
 				id = -1
 				count = 0
 				scorer:flush()
@@ -566,6 +608,7 @@ function Game:mark_falling()
 end
 
 function Game:fill_cleared()
+	local found = false
 	for x = 1,BoardSize do
 		local start = -1
 		for y = BoardSize,1,-1 do
@@ -580,8 +623,12 @@ function Game:fill_cleared()
 				gem = Block:new()
 				gem:drop( BoardSize - start )
 				self:set( p, gem )
+
+				found = true
 			end
 		end
 	end
+
+	return found
 end
 
