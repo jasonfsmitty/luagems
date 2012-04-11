@@ -370,7 +370,7 @@ function Game:new( o )
 	end
 	o.score:reset()
 
-	print( "Finished initializing board." )
+	print( "Finished initializing board, returning o=", o )
 	return o
 end
 
