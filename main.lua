@@ -38,6 +38,7 @@ AppStates =
 	-- -----------------------------------------------------
 	title = {
 		enter      = function (app)      app.title:enter( app ) end,
+		leave      = function (app)      app.title:leave( app ) end,
 		focus      = handle_focus,
 		update     = function (app, dt)  app.title:update( app, dt ) end,
 		draw       = function (app)      app.title:draw( app ) end,
