@@ -1,49 +1,34 @@
-require "background"
-
 Title = {}
 
 function Title:new()
-	o = {}
+	local o = {}
 	setmetatable( o, self )
 	self.__index = self
+
+	o.fontsize = 32
+	o.font = love.graphics.newFont( self.fontsize )
+	print( "Created new title:", o )
+	print( "    fontsize=", o.fontsize )
+	print( "    font=", o.font )
+
+	o.testfont = love.graphics.newFont( "fonts/CPMono_v07_Black.otf", 24 )
+	print( "Test font: ", o.testfont )
 	return o
 end
 
-function Title:enter( app )
-	if not self.font then
-		self.fontsize = 32
-		self.font = love.graphics.newFont( self.fontsize )
-	end
-
-	self.background = getBackground()
-	if self.background then
-		self.background:enter()
-	else
-		print( "No background created!!" )
-	end
+function Title:enter()
+	-- pass
 end
 
-function Title:leave( app )
-	if self.background and self.background.leave then
-		self.background:leave()
-	end
-
-	self.background = nil
+function Title:leave()
+	-- pass
 end
 
 function Title:update( app, dt )
-	if self.background and self.background.update then
-		self.background:update( dt )
-	end
+	-- pass
 end
 
 function Title:draw( app )
-	if self.background and self.background.draw then
-		self.background:draw()
-	else
-		-- print( "No background" )
-	end
-
 	love.graphics.setFont( self.font )
 	love.graphics.setColor( 150, 180, 255, 180 )
 
@@ -51,6 +36,11 @@ function Title:draw( app )
 	local height = love.graphics.getHeight()
 
 	love.graphics.printf( "Lua Gems", 0, height - self.fontsize, width, "right" )
+
+
+	love.graphics.setFont( self.testfont )
+	love.graphics.setColor( 255, 255, 255, 255 )
+	love.graphics.print( "Testing custom fonts!", 20, 20 )
 end
 
 function Title:keypressed( app, key )
@@ -58,8 +48,6 @@ function Title:keypressed( app, key )
 		app:goto( "game" )
 	elseif key == "escape" then
 		love.event.quit()
-	elseif self.background and self.background.keypressed then
-		self.background:keypressed( key )
 	end
 end
 

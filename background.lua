@@ -1,4 +1,5 @@
 require "game"
+beholder = require "beholder"
 
 BlankBackground = {
 	enter  = nil,
@@ -85,7 +86,7 @@ function randomColor()
 end
 
 function randomSpeed()
-	return math.random() * 5 + 0.5
+	return math.random() * 2 + 0.5
 end
 
 local Grid = {
@@ -115,21 +116,41 @@ local Grid = {
 					local b = {}
 					b.x = ((x-1) * bg.gridsize + bg.blockmargin) + shift
 					b.y = ((y-1) * bg.gridsize + bg.blockmargin) + shift
-					b.alpha = 0
 					b.speed = randomSpeed()
-					b.state = "in"
 					b.color = randomColor()
+					if true then
+						b.state = "in"
+						b.alpha = 0
+					else
+						b.state = ( math.random() < 0.5 ) and "in" or "out"
+						b.alpha = math.random()
+					end
 					bg.blocks[ #bg.blocks + 1 ] = b
 				end
 			end
-			print( "Created Grid   : ", bg )
-			print( "   Grid.blocks : ", bg.blocks )
+
+			bg.flashId = beholder.observe( "CLEAR", function () bg:flash() end )
+
+			bg.darken = false
+			bg.startId = beholder.observe( "ENTER_GAME", function () bg:flash(); bg.darken = true end )
+			bg.startId = beholder.observe( "LEAVE_GAME", function () bg.darken = false end )
+		end,
+
+	flash =
+		function (bg)
+			for i,k in ipairs( bg.blocks ) do
+				local b = bg.blocks[ i ]
+				b.state = "out"
+				b.alpha = 1
+			end
 		end,
 
 	update =
 		function (bg, dt)
 			local dx = bg.vx * dt
 			local dy = bg.vy * dt
+			local inmax = ( bg.darken and 0.5 or 1.0 )
+			dt = ( bg.darken and dt/2 or dt)
 			for i,k in ipairs( bg.blocks ) do
 				local b = bg.blocks[ i ]
 				b.x = b.x + dx
@@ -142,9 +163,9 @@ local Grid = {
 				end
 				if b.state == "in" then
 					b.alpha = b.alpha + (dt * b.speed)
-					if b.alpha >= 1.0 then
+					if b.alpha >= inmax then
 						b.state = "out"
-						b.alpha = 1
+						b.alpha = inmax
 					end
 				elseif b.state == "out" then
 					b.alpha = b.alpha - (dt * b.speed)
@@ -179,7 +200,11 @@ local _backgrounds = {
 }
 
 function getBackground( idx )
-	return Grid
+	local bg = Grid
+	if bg.enter then
+		bg:enter()
+	end
+	return bg
 	-- return _backgrounds[ math.random( 1, #_backgrounds ) ]
 end
 

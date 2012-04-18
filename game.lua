@@ -1,11 +1,13 @@
 require "math"
 require "score"
 
+beholder = require "beholder"
+
 Point = {}
 Block = {}
 Game = {}
 
-local NumBlockTypes = 7
+local NumBlockTypes = 5 -- 7
 local ClearSize = 3
 local BoardSize = 8
 local SwapRate  = 10.0
@@ -32,6 +34,7 @@ end
 
 -- cursor = { pressed, x, y }
 function Point:new( copy )
+	local o
 	if copy then
 		o = { x = copy.x, y = copy.y }
 	else
@@ -116,7 +119,7 @@ BlockStates = {
 }
 
 function Block:new( copy )
-	o = {
+	local o = {
 		id = math.random( 1, NumBlockTypes ),
 		dx = 0,
 		dy = 0,
@@ -278,6 +281,7 @@ GameStates = {
 			function (game, dt)
 				if not game:update_all( dt ) then
 					if game:check_matches() then
+						beholder.trigger( "CLEAR" )
 						game:goto( "clear" )
 					else
 						game:do_revert()
@@ -330,6 +334,7 @@ GameStates = {
 			function (game, dt)
 				if not game:update_all( dt ) then
 					if game:check_matches() then
+						beholder.trigger( "CLEAR" )
 						game:goto( "clear" )
 					else
 						game:goto( "idle" )
@@ -340,7 +345,7 @@ GameStates = {
 }
 
 function Game:new( o )
-	o = o or {}
+	local o = o or {}
 	setmetatable( o, self )
 	self.__index = self
 
@@ -422,7 +427,7 @@ function Game:update( dt )
 end
 
 function Game:goto( state )
-	newstate = GameStates[ state ]
+	local newstate = GameStates[ state ]
 	if not newstate then
 		print( "ERROR: cannot transition to invalid state '" .. state .. "'" )
 	elseif self.state ~= newstate then

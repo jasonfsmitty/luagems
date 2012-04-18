@@ -1,7 +1,9 @@
+beholder = require "beholder"
+
 Score = {}
 
 function Score:new()
-	o = {}
+	local o = {}
 	o.total = 0
 	o.wave = 0
 	o.matches = {}
@@ -9,6 +11,10 @@ function Score:new()
 	setmetatable( o, self )
 	self.__index = self
 	return o
+end
+
+function Score:value()
+	return self.total
 end
 
 function Score:reset()
@@ -23,7 +29,7 @@ function Score:start()
 end
 
 function Score:stop()
-	local PointsPerGem = 50
+	local PointsPerGem = 100
 
 	if #self.matches == 0 then
 		self.wave = 0
@@ -33,6 +39,7 @@ function Score:stop()
 		local matchTotal = 0
 		for _,v in pairs( self.matches ) do
 			for _,g in pairs( v ) do
+				print( "Testing match item:", g )
 				if not matchSet[g] then
 					matchTotal = matchTotal + 1
 					matchSet[ g ] = true
@@ -40,10 +47,12 @@ function Score:stop()
 			end
 		end
 
-		local amount = ( self.wave * #self.matches * matchTotal ) * PointsPerGem
+		--local amount = ( self.wave * #self.matches * matchTotal ) * PointsPerGem
+		local amount = math.pow( #self.matches * matchTotal, self.wave ) * PointsPerGem
 		self.total = self.total + amount
 		print( string.format( "Score: total=%u amount=%u wave=%u matches=%u gems=%u", self.total, amount, self.wave, #self.matches, matchTotal ) )
 
+		beholder.trigger( "SCORE", amount )
 		self.matches = {}
 	end
 end
@@ -70,7 +79,7 @@ end
 
 function Scorer:add( gem )
 	if gem and (gem.id > 0) then
-		self.matches[ #self.matches + 1 ] = gem.id
+		self.matches[ #self.matches + 1 ] = gem
 	end
 end
 

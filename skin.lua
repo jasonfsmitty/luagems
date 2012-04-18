@@ -1,8 +1,8 @@
-
+beholder = require "beholder"
 Skin = {}
 
 function Skin:new( o )
-	o = o or {}
+	local o = o or {}
 	o.colors = {
 		{ 255,   0,   0, 255 }, -- 1
 		{ 0,   255,   0, 255 }, -- 2
@@ -13,13 +13,34 @@ function Skin:new( o )
 		{ 255, 255, 255, 255 }, -- 7
 	}
 
+	o.fontsize = 24
+	o.font = love.graphics.newFont( "fonts/CPMono_v07_Black.otf", o.fontsize )
+
+	o.scores = {}
+	o.scoreId = beholder.observe( "SCORE", function (amount) o:addScore(amount) end )
+
 	setmetatable( o, self )
 	self.__index = self
 	return o
 end
 
+function Skin:addScore( amount )
+	print( "Skin received scoring event, score=", amount )
+	table.insert( self.scores, { value=amount, time=1 } )
+end
+
 function Skin:update( dt )
-	-- TODO
+	local decayRate = 0.5
+	local todelete = 0
+	for i,score in ipairs( self.scores ) do
+		score.time = score.time - ( dt * decayRate )
+		if score.time <= 0 then
+			todelete = todelete + 1
+		end
+	end
+	for i=1,todelete do
+		table.remove( self.scores, 1 )
+	end
 end
 
 function Skin:draw( game )
@@ -37,19 +58,35 @@ function Skin:draw( game )
 	c.rotation    = c.game.rotation and c.game.rotation or 0
 
 	love.graphics.push()
+		if c.rotation ~= 0 then
+			local s = c.shift + c.blockmargin + c.fieldsize / 2
+			love.graphics.translate( s, s )
+			love.graphics.rotate( -c.rotation * math.pi / 2 )
+			love.graphics.translate( -s, -s )
+		end
 
-	if c.rotation ~= 0 then
-		local s = c.shift + c.blockmargin + c.fieldsize / 2
-		love.graphics.translate( s, s )
-		love.graphics.rotate( -c.rotation * math.pi / 2 )
-		love.graphics.translate( -s, -s )
-	end
-
-	self:draw_grid( c )
-	self:draw_cubes( c )
-	self:draw_cursor( c )
-
+		self:draw_grid( c )
+		self:draw_cubes( c )
+		self:draw_cursor( c )
 	love.graphics.pop()
+
+	self:draw_hud( c )
+end
+
+function Skin:draw_hud( c )
+	love.graphics.setFont( self.font )
+	love.graphics.setColor( 240, 240, 240, 255 )
+
+	local width = love.graphics.getWidth() - c.shift * 2 - c.fieldsize
+	love.graphics.printf( "SCORE", c.shift + c.fieldsize + c.shift, 50, width, "center" )
+	love.graphics.printf( c.game.score:value(), c.shift + c.fieldsize + c.shift, 80, width, "right" )
+
+	local line = 0
+	for i=#self.scores,1,-1 do
+		love.graphics.setColor( 255, 255, 255, 255 * self.scores[i].time )
+		love.graphics.printf( self.scores[i].value, c.shift + c.fieldsize + c.shift, 110 + 30*line, width, "right" )
+		line = line + 1
+	end
 end
 
 function Skin:draw_cubes( c )
@@ -88,6 +125,9 @@ function Skin:draw_grid( c )
 	local rgb = 255 * 0.7
 	local alpha = 255 * 0.55
 
+	love.graphics.setColor( 25, 25, 25, 200 )
+	love.graphics.rectangle( 'fill', left,  top,  c.fieldsize, c.fieldsize )
+	--love.graphics.rectangle( 'fill', 0, 0, love.graphics.getWidth(), love.graphics.getHeight() )
 	love.graphics.setColor( rgb, rgb, rgb, alpha )
 	love.graphics.rectangle( 'fill', left, top, c.fieldsize, c.fieldsize )
 
