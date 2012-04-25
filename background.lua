@@ -48,6 +48,7 @@ RandomFalling = {
 	update = function (bg, dt)
 			local width = love.graphics.getWidth()
 			local height = love.graphics.getHeight()
+			local i, k
 
 			for i,k in ipairs( bg.blocks ) do
 				local block = bg.blocks[i]
@@ -62,6 +63,7 @@ RandomFalling = {
 		end,
 
 	draw = function (bg)
+			local i,k
 			for i,k in ipairs( bg.blocks ) do
 				local block = bg.blocks[ i ]
 				local s = block.size / 2
@@ -111,6 +113,7 @@ local Grid = {
 
 			bg.blocks = {}
 			local shift = math.random( -bg.blocksize/2, bg.blocksize )
+			local x, y
 			for x=1,bg.cols do
 				for y=1,bg.rows do
 					local b = {}
@@ -138,8 +141,9 @@ local Grid = {
 
 	flash =
 		function (bg)
+			local i, k, b
 			for i,k in ipairs( bg.blocks ) do
-				local b = bg.blocks[ i ]
+				b = bg.blocks[ i ]
 				b.state = "out"
 				b.alpha = 1
 			end
@@ -147,6 +151,7 @@ local Grid = {
 
 	update =
 		function (bg, dt)
+			local i, k
 			local dx = bg.vx * dt
 			local dy = bg.vy * dt
 			local inmax = ( bg.darken and 0.5 or 1.0 )
@@ -181,6 +186,7 @@ local Grid = {
 
 	draw =
 		function (bg)
+			local i,k
 			for i,k in ipairs( bg.blocks ) do
 				local b = bg.blocks[ i ]
 				b.color[4] = 255 * b.alpha

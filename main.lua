@@ -24,17 +24,27 @@ function love.load()
 end
 
 function love.focus(f)
+	print( "FOCUS:",  f )
 	for _,worker in pairs( workers ) do
 		if worker.focus then
-			worker:focus( f )
+			-- worker:focus( f )
 		end
 	end
 end
 
 function love.keypressed( key )
-	for _,worker in pairs( workers ) do
-		if worker.keypressed then
-			worker:keypressed( key )
+	print( "KEYPRESS( " .. key .. " )" )
+	if key == "p" or key == "P" then
+		for _,worker in pairs( workers ) do
+			if worker.dump then
+				worker:dump()
+			end
+		end
+	else
+		for _,worker in pairs( workers ) do
+			if worker.keypressed then
+				worker:keypressed( key )
+			end
 		end
 	end
 end
@@ -49,6 +59,7 @@ function love.joystickreleased( joy, but )
 end
 
 function love.mousepressed( x, y, button )
+	print( "MOUSE PRESS: x=", x, " y=", y, " button=", button )
 	if button == "l" then
 		-- _app.paused = false
 	end

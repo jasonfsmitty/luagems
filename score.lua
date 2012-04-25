@@ -28,7 +28,20 @@ function Score:start()
 	self.matches = {}
 end
 
-function Score:stop()
+--[[
+	Calculating scores ...
+
+	Examples:
+	  clear[3]x1  -   250
+	  clear[4]x1  -  2500
+	  clear[5]x1  - 25000
+
+	  clear[3]x2  -  5000
+	  clear[4]x2  - 50000
+
+]]
+
+function Score:stop( missing )
 	local PointsPerGem = 100
 
 	if #self.matches == 0 then
@@ -36,21 +49,30 @@ function Score:stop()
 	else
 		-- iterate through each set of matches
 		local matchSet = {}
-		local matchTotal = 0
+		local totalCleared = 0
+		local v, g
+
 		for _,v in pairs( self.matches ) do
 			for _,g in pairs( v ) do
 				print( "Testing match item:", g )
 				if not matchSet[g] then
-					matchTotal = matchTotal + 1
+					totalCleared = totalCleared + 1
 					matchSet[ g ] = true
 				end
 			end
 		end
 
-		--local amount = ( self.wave * #self.matches * matchTotal ) * PointsPerGem
-		local amount = math.pow( #self.matches * matchTotal, self.wave ) * PointsPerGem
+		if totalCleared < 3 then
+			totalCleared = 3
+		end
+	
+		--local amount = ( self.wave * #self.matches * totalCleared ) * PointsPerGem
+		--local amount = math.pow( #self.matches * totalCleared, self.wave ) * PointsPerGem
+		--local amount = math.pow( self.wave + 1, totalCleared ) * 250
+		--local amount = ( 250 * self.wave ) * totalCleared * totalCleared * ( self.wave * 10 )
+		local amount = 1250 * self.wave * ( missing + 1 ) * totalCleared * totalCleared
 		self.total = self.total + amount
-		print( string.format( "Score: total=%u amount=%u wave=%u matches=%u gems=%u", self.total, amount, self.wave, #self.matches, matchTotal ) )
+		print( string.format( "Score: total=%u amount=%u wave=%u matches=%u gems=%u", self.total, amount, self.wave, #self.matches, totalCleared ) )
 
 		beholder.trigger( "SCORE", amount )
 		self.matches = {}

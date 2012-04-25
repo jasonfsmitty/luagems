@@ -11,7 +11,7 @@ local NumBlockTypes = 5 -- 7
 local ClearSize = 3
 local BoardSize = 8
 local SwapRate  = 10.0
-local FallRate  = 10.0
+local FallRate  = 12.0
 local ClearRate = 5.0
 local RotateRate = 4.0
 
@@ -585,8 +585,21 @@ function Game:check_matches()
 	self.score:start()
 	local horiz = self:scan_for_matches( false )
 	local vert  = self:scan_for_matches( true )
-	self.score:stop()
+	self.score:stop( self:count_empty() )
 	return horiz or vert
+end
+
+function Game:count_empty()
+	local missing = 0
+	for x=1,BoardSize do
+		for y=1,BoardSize do
+			local gem = self:get( {x=x,y=y} )
+			if not gem or gem.id == 0 then
+				missing = missing + 1
+			end
+		end
+	end
+	return missing
 end
 
 function Game:mark_falling()

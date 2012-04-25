@@ -109,6 +109,10 @@ function App:new()
 	return o
 end
 
+function App:dump()
+	print( "-- App", self, " --" )
+end
+
 function App:goto( state )
 	local newstate = AppStates[ state ]
 	if not newstate then

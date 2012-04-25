@@ -11,8 +11,6 @@ function Title:new()
 	print( "    fontsize=", o.fontsize )
 	print( "    font=", o.font )
 
-	o.testfont = love.graphics.newFont( "fonts/CPMono_v07_Black.otf", 24 )
-	print( "Test font: ", o.testfont )
 	return o
 end
 
@@ -36,11 +34,6 @@ function Title:draw( app )
 	local height = love.graphics.getHeight()
 
 	love.graphics.printf( "Lua Gems", 0, height - self.fontsize, width, "right" )
-
-
-	love.graphics.setFont( self.testfont )
-	love.graphics.setColor( 255, 255, 255, 255 )
-	love.graphics.print( "Testing custom fonts!", 20, 20 )
 end
 
 function Title:keypressed( app, key )
