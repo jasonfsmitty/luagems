@@ -49,6 +49,7 @@ AppStates =
 			function (app)
 				app.game = Game:new()
 				app.skin = Skin:new()
+				app.skin:set_constants( app.game )
 				beholder.trigger( "ENTER_GAME" )
 			end,
 
@@ -81,6 +82,14 @@ AppStates =
 				end
 			end,
 
+		mousepress =
+			function (app, x, y, button )
+			end,
+
+		mouserelease =
+			function (app, x, y, button )
+			end,
+
 		update =
 			function (app, dt)
 				if not app.paused then
@@ -106,11 +115,18 @@ function App:new()
 	o.title = Title:new()
 	print( "app=", o, " title=", o.title )
 	o:goto( "init" )
+
+	o.dumpId = beholder.observe( "DUMP", function () o:dump() end )
 	return o
 end
 
 function App:dump()
-	print( "-- App", self, " --" )
+	function dmp(x) print( "    " .. x .. ":", self[x] ) end
+
+	print( "Dumping App state:", self )
+	for i,v in pairs( self ) do
+		print( "    " .. i .. "\t= ", v )
+	end
 end
 
 function App:goto( state )
@@ -146,7 +162,20 @@ function App:keypressed( key )
 	end
 end
 
+function App:mousepressed( x, y, button )
+	if self.state and self.state.mousepressed then
+		self.state.mousepressed( self, x, y, button )
+	end
+end
+
+function App:mousereleased( x, y, button )
+	if self.state and self.state.mousereleased then
+		self.state.mousereleased( self, x, y, button )
+	end
+end
+
 function App:update( dt )
+	self.statetime = self.statetime + dt
 	self.state.update( self, dt )
 end
 

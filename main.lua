@@ -5,7 +5,7 @@
 
 require "app"
 require "background"
-
+beholder = require "beholder"
 -- -----------------------------------------------------
 
 local workers = {}
@@ -35,11 +35,7 @@ end
 function love.keypressed( key )
 	print( "KEYPRESS( " .. key .. " )" )
 	if key == "p" or key == "P" then
-		for _,worker in pairs( workers ) do
-			if worker.dump then
-				worker:dump()
-			end
-		end
+		beholder.trigger( "DUMP" )
 	else
 		for _,worker in pairs( workers ) do
 			if worker.keypressed then
@@ -62,6 +58,21 @@ function love.mousepressed( x, y, button )
 	print( "MOUSE PRESS: x=", x, " y=", y, " button=", button )
 	if button == "l" then
 		-- _app.paused = false
+	end
+	for _,worker in pairs( workers ) do
+		if worker.mousepressed then
+			worker:mousepressed( x, y, button )
+		end
+	end
+end
+
+function love.mousereleased( x, y, button )
+	print( "MOUSE RELEASE: x=", x, " y=", y, " button=", button )
+
+	for _,worker in pairs( workers ) do
+		if worker.mousereleased then
+			worker:mousereleased( x, y, button )
+		end
 	end
 end
 

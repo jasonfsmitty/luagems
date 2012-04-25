@@ -125,6 +125,7 @@ function Block:new( copy )
 		dy = 0,
 		clear = 0,
 		state = BlockStates[ "idle" ],
+		statename = "idle",
 		key = ""
 	}
 	if copy then
@@ -135,6 +136,16 @@ function Block:new( copy )
 	setmetatable( o, self )
 	self.__index = self
 	return o
+end
+
+function Block:dump()
+	local s=""
+	for i,v in pairs( self ) do
+		if i ~= 'state' then
+			s = s .. " " .. i .. "=" .. v
+		end
+	end
+	return s
 end
 
 function Block:is_alive()
@@ -151,6 +162,7 @@ function Block:goto( state )
 	end
 
 	self.state = BlockStates[ state ]
+	self.statename = state
 
 	if state == "idle" then
 		self.clear = 0
@@ -171,7 +183,6 @@ function Block:goto( state )
 		self.dy = 0
 		self.clear = 0
 	end
-	--print( "Block[" .. self.key .. "]: state=" .. state .. " dx=" .. self.dx .. " dy=" .. self.dy .. " clear=" .. self.clear )
 end
 
 function Block:swap( left, right )
@@ -375,8 +386,28 @@ function Game:new( o )
 	end
 	o.score:reset()
 
+	o.dumpId = beholder.observe( "DUMP", function () o:dump() end )
+	o.leaveId = beholder.observe( "LEAVE_GAME", function () o:leave() end )
+
 	print( "Finished initializing board, returning o=", o )
 	return o
+end
+
+function Game:leave()
+	beholder.stopObserving( self.dumpId )
+	beholder.stopObserving( self.leaveId )
+end
+
+function Game:dump()
+	print( "DUMP Game:", self )
+	for i,v in pairs(self) do
+		print( "    " .. i .. "\t= ", v )
+	end
+
+	local i, v, k, g, s
+	for i,v in pairs( self.gems ) do
+		print( "    gems[" .. i .. "] = " .. v:dump() )
+	end
 end
 
 function Game:get( p )

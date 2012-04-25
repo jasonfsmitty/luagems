@@ -137,6 +137,18 @@ local Grid = {
 			bg.darken = false
 			bg.startId = beholder.observe( "ENTER_GAME", function () bg:flash(); bg.darken = true end )
 			bg.startId = beholder.observe( "LEAVE_GAME", function () bg.darken = false end )
+
+			bg.dumpId  = beholder.observe( "DUMP", function () bg:dump() end )
+		end,
+
+	dump =
+		function (bg)
+			local dmp = function (x) print( "    " .. x .. ":", bg[x] ) end
+
+			print( "DUMP Background:", bg )
+			for i,v in pairs( bg ) do
+				print( "    " .. i .. "\t= ", v )
+			end
 		end,
 
 	flash =

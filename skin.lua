@@ -46,8 +46,7 @@ function Skin:update( dt )
 	end
 end
 
-function Skin:draw( game )
-	-- constants
+function Skin:set_constants( game )
 	local c = {}
 	c.game = game
 	c.size = game.size()
@@ -58,7 +57,6 @@ function Skin:draw( game )
 	c.fieldsize   = c.height - 2 * c.margin
 	c.blocksize   = c.fieldsize / c.size
 	c.blockmargin = c.blocksize * 0.10
-	c.rotation    = c.game.rotation or 0
 
 	if IsBoardCentered then
 		c.left    = ( c.width - c.fieldsize ) / 2
@@ -69,6 +67,14 @@ function Skin:draw( game )
 	c.top         = c.margin
 	c.bottom      = c.margin + c.fieldsize
 	c.right       = c.left + c.fieldsize
+
+	self.constants = c
+end
+
+function Skin:draw( game )
+	-- self:set_constants( game )
+	local c = self.constants
+	c.rotation  = c.game.rotation or 0
 
 	love.graphics.push()
 		if c.rotation ~= 0 then
