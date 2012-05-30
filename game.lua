@@ -404,7 +404,6 @@ function Game:dump()
 		print( "    " .. i .. "\t= ", v )
 	end
 
-	local i, v, k, g, s
 	for i,v in pairs( self.gems ) do
 		print( "    gems[" .. i .. "] = " .. v:dump() )
 	end
@@ -450,6 +449,19 @@ end
 
 function Game:cursortoggle()
 	self.state.toggle( self )
+end
+
+function Game:movecursor( x, y )
+	if self.state.moveto then
+		self.state.moveto( self, x, y )
+	end
+end
+
+function Game:mousepressed( x, y, button )
+	if button == "left" then
+		self:movecursor( x, y )
+		self:cursorpress()
+	end
 end
 
 function Game:update( dt )
@@ -634,11 +646,10 @@ function Game:count_empty()
 end
 
 function Game:mark_falling()
-	local x, y, shift
 	local found = false
 
 	for x = 1,BoardSize do
-		shift = 0
+		local shift = 0
 		for y = BoardSize,1,-1 do
 			local gem = self:get( { x=x, y=y } )
 

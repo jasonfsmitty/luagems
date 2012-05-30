@@ -143,8 +143,6 @@ local Grid = {
 
 	dump =
 		function (bg)
-			local dmp = function (x) print( "    " .. x .. ":", bg[x] ) end
-
 			print( "DUMP Background:", bg )
 			for i,v in pairs( bg ) do
 				print( "    " .. i .. "\t= ", v )
@@ -153,9 +151,8 @@ local Grid = {
 
 	flash =
 		function (bg)
-			local i, k, b
 			for i,k in ipairs( bg.blocks ) do
-				b = bg.blocks[ i ]
+				local b = bg.blocks[ i ]
 				b.state = "out"
 				b.alpha = 1
 			end
@@ -163,11 +160,10 @@ local Grid = {
 
 	update =
 		function (bg, dt)
-			local i, k
 			local dx = bg.vx * dt
 			local dy = bg.vy * dt
 			local inmax = ( bg.darken and 0.5 or 1.0 )
-			dt = ( bg.darken and dt/2 or dt)
+			local dt = ( bg.darken and dt/2 or dt)
 			for i,k in ipairs( bg.blocks ) do
 				local b = bg.blocks[ i ]
 				b.x = b.x + dx
@@ -198,7 +194,6 @@ local Grid = {
 
 	draw =
 		function (bg)
-			local i,k
 			for i,k in ipairs( bg.blocks ) do
 				local b = bg.blocks[ i ]
 				b.color[4] = 255 * b.alpha

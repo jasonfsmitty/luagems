@@ -50,7 +50,6 @@ function Score:stop( missing )
 		-- iterate through each set of matches
 		local matchSet = {}
 		local totalCleared = 0
-		local v, g
 
 		for _,v in pairs( self.matches ) do
 			for _,g in pairs( v ) do

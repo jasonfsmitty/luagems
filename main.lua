@@ -61,7 +61,7 @@ function love.mousepressed( x, y, button )
 	end
 	for _,worker in pairs( workers ) do
 		if worker.mousepressed then
-			worker:mousepressed( x, y, button )
+			--worker:mousepressed( x, y, button )
 		end
 	end
 end
@@ -71,7 +71,7 @@ function love.mousereleased( x, y, button )
 
 	for _,worker in pairs( workers ) do
 		if worker.mousereleased then
-			worker:mousereleased( x, y, button )
+			--worker:mousereleased( x, y, button )
 		end
 	end
 end

@@ -32,6 +32,15 @@ function Skin:addScore( amount )
 	table.insert( self.scores, { value=amount, time=1 } )
 end
 
+function Skin:translate_mouse( x, y )
+	local c = self.constants
+	if x < c.left or x > c.right or y < c.top or y > c.bottom then
+		return nil
+	end
+
+	return math.floor( (x - c.left) / c.blocksize ) + 1, math.floor( (y-c.top) / c.blocksize ) + 1
+end
+
 function Skin:update( dt )
 	local decayRate = 0.5
 	local todelete = 0

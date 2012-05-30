@@ -82,12 +82,16 @@ AppStates =
 				end
 			end,
 
-		mousepress =
+		mousepressed =
 			function (app, x, y, button )
+				local ix, iy = app.skin:translate_mouse( x, y )
+				app.game:mousepressed( ix, iy, button )
 			end,
 
-		mouserelease =
+		mousereleased =
 			function (app, x, y, button )
+				local ix, iy = app.skin:translate_mouse( x, y )
+				app.game:mousereleased( ix, iy, button )
 			end,
 
 		update =
@@ -121,7 +125,7 @@ function App:new()
 end
 
 function App:dump()
-	function dmp(x) print( "    " .. x .. ":", self[x] ) end
+	local dmp = function (x) print( "    " .. x .. ":", self[x] ) end
 
 	print( "Dumping App state:", self )
 	for i,v in pairs( self ) do
