@@ -45,6 +45,10 @@ function Point:new( copy )
 	return o
 end
 
+function Point:str()
+	return "(" .. self.x .. "," .. self.y .. ")"
+end
+
 function Point:left()
 	if self.x > 1 then
 		self.x = self.x - 1
@@ -361,8 +365,8 @@ function Game:new( o )
 	self.__index = self
 
 	o.cursor = Point:new()
-	o.previous = Point:new()
-	o.previous.x = o.previous.x + 1
+	o.swap1 = nil
+	o.swap2 = nil
 
 	o.gems = {}
 	for x = 1, BoardSize do
@@ -546,30 +550,32 @@ function Game:update_rotate( dt )
 end
 
 function Game:do_swap( dir )
+	-- print( "_swap( dir=" .. dir .. " game.state=" .. self.statename .. " )" )
 	local tmp = Point:new( self.cursor )
 	local func = tmp[dir]
 	if func and func( tmp ) then
-		self.previous = tmp
+		self.swap1 = Point:new( self.cursor )
+		self.swap2 = Point:new( tmp )
 		return self:do_revert()
 	end
 	return false
 end
 
 function Game:do_revert()
-	local gem1 = self:get( self.cursor )
-	local gem2 = self:get( self.previous )
+	-- print( "do_revert( " .. self.swap1:str() .. ", " .. self.swap2:str() .. " )" )
+	local gem1 = self:get( self.swap1 )
+	local gem2 = self:get( self.swap2 )
 
 	if not gem1 or not gem2 then return false end
 	if (gem1.id == 0) or (gem2.id == 0) then return false end
 
-	gem1:swap( self.cursor, self.previous )
-	gem2:swap( self.previous, self.cursor )
+	gem1:swap( self.swap1, self.swap2 )
+	gem2:swap( self.swap2, self.swap1 )
 	
-	self:set( self.cursor, gem2 )
-	self:set( self.previous, gem1 )
+	self:set( self.swap1, gem2 )
+	self:set( self.swap2, gem1 )
 
-	self.cursor, self.previous = self.previous, self.cursor
-
+	self.swap1, self.swap2 = self.swap2, self.swap1
 	return true
 end
 
