@@ -129,7 +129,6 @@ function Skin:draw_hud( c )
 
 	love.graphics.printf( score, left, top + height, width, "right" )
 
-	local line = 0
 	for i=#self.scores,1,-1 do
 		love.graphics.setColor( 255, 255, 255, 255 * self.scores[i].time )
 
@@ -138,8 +137,6 @@ function Skin:draw_hud( c )
 				left,
 				top + 2 * height + height * ( self.scores[i].time),
 				width, "right" )
-
-		line = line + 1 
 	end
 end
 

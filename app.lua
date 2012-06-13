@@ -2,6 +2,7 @@
 require "game"
 require "skin"
 require "title"
+require "options"
 
 beholder = require "beholder"
 
@@ -22,14 +23,6 @@ end
 AppStates =
 {
 	-- -----------------------------------------------------
-	init = {
-		enter  = nil,
-		focus  = handle_focus,
-		update = function (app, dt) app:goto( "title" ) end,
-		draw   = nil,
-	},
-
-	-- -----------------------------------------------------
 	title = {
 		enter =
 			function (app)
@@ -41,6 +34,19 @@ AppStates =
 		update     = function (app, dt)  app.title:update( app, dt ) end,
 		draw       = function (app)      app.title:draw( app ) end,
 		keypressed = function (app, key) app.title:keypressed( app, key ) end,
+	},
+
+	-- -----------------------------------------------------
+	options = {
+		enter =
+			function (app)
+				app.options:enter( app )
+			end,
+		leave      = function (app)      app.options:leave( app ) end,
+		focus      = handle_focus,
+		update     = function (app, dt)  app.options:update( app, dt ) end,
+		draw       = function (app)      app.options:draw( app ) end,
+		keypressed = function (app, key) app.options:keypressed( app, key ) end,
 	},
 
 	-- -----------------------------------------------------
@@ -116,9 +122,19 @@ function App:new()
 	setmetatable( o, self )
 	self.__index = self
 
+	o.fontsize = 32
+	o.font = love.graphics.newFont( "fonts/UbuntuMono-B.ttf", o.fontsize )
+	print( "Created new title:", o )
+	print( "    fontsize=", o.fontsize )
+	print( "    font=", o.font )
+
 	o.title = Title:new()
 	print( "app=", o, " title=", o.title )
-	o:goto( "init" )
+
+	o.options = Options:new()
+	print( "app=", o, " options=", o.options )
+
+	o:goto( "title" )
 
 	o.dumpId = beholder.observe( "DUMP", function () o:dump() end )
 	return o
