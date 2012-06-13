@@ -8,6 +8,42 @@ function Options:new()
 	self.current = 1
 	self.items = {}
 	
+	self.items[ #self.items + 1 ] = {
+		keypressed = function (app) end,
+		draw = function(app, ypos, width)
+				love.graphics.printf( "TODO", 0, ypos, width, "center" )
+			end,
+	}
+
+	self.items[ #self.items + 1 ] = {
+
+		toggle = function( app )
+				if app.config[ 'easy' ] then
+					app.config[ 'easy' ] = false
+				else
+					app.config[ 'easy' ] = true
+				end
+			print( "toggled easy config: ", app.config['easy'] )
+		end,
+
+		keypressed = function (self, app, key)
+				local keys = {}
+				keys['return'] = self.toggle
+				keys['right'] = self.toggle
+				keys['left'] = self.toggle
+
+				print( "got key press: ", key, keys[key] )
+				if keys[key] then
+					keys[key]( app )
+				end
+			end,
+
+		draw = function(app, ypos, width)
+				local s = string.format( "Easy Mode: %s", ( app.config['easy'] and "on" or "off" ) )
+				love.graphics.printf( s, 0, ypos, width, "center" )
+			end,
+	}
+
 	return o
 end
 
@@ -39,7 +75,7 @@ function Options:draw( app )
 		else
 			love.graphics.setColor( 125, 125, 125, 250 )
 		end
-		self.items[ i ]:draw( app, width, ypos + i * app.fontsize )
+		self.items[ i ].draw( app, ypos + i * app.fontsize, width )
 	end
 end
 
@@ -57,6 +93,7 @@ function Options:keypressed( app, key )
 	else
 		local item = self.items[ self.current ]
 		if item and item.keypressed then
+			print( "passing on key press ..." )
 			item:keypressed( app, key )
 		end
 	end

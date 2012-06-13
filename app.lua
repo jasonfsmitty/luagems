@@ -53,7 +53,7 @@ AppStates =
 	game = {
 		enter =
 			function (app)
-				app.game = Game:new()
+				app.game = Game:new( app.config )
 				app.skin = Skin:new()
 				app.skin:set_constants( app.game )
 				beholder.trigger( "ENTER_GAME" )
@@ -135,6 +135,9 @@ function App:new()
 	print( "app=", o, " options=", o.options )
 
 	o:goto( "title" )
+
+	o.config = {}
+	o.config['easy'] = false
 
 	o.dumpId = beholder.observe( "DUMP", function () o:dump() end )
 	return o

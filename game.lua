@@ -298,7 +298,10 @@ GameStates = {
 					if game:check_matches() then
 						beholder.trigger( "CLEAR" )
 						game:goto( "clear" )
+					elseif game.config and game.config.easy then
+						game:goto( "idle" )
 					else
+						print( "game.config = ", game.config )
 						game:do_revert()
 						game:goto( "revert" )
 					end
@@ -359,10 +362,12 @@ GameStates = {
 	},
 }
 
-function Game:new( o )
-	local o = o or {}
+function Game:new( config )
+	local o = {}
 	setmetatable( o, self )
 	self.__index = self
+
+	o.config = config
 
 	o.cursor = Point:new()
 	o.swap1 = nil
