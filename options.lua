@@ -8,22 +8,22 @@ function Options:new()
 	self.current = 1
 	self.items = {}
 	
-	self.items[ #self.items + 1 ] = {
-		keypressed = function (app) end,
-		draw = function(app, ypos, width)
-				love.graphics.printf( "TODO", 0, ypos, width, "center" )
-			end,
-	}
+--	self.items[ #self.items + 1 ] = {
+--		keypressed = function (app) end,
+--		draw = function(app, ypos, width)
+--				love.graphics.printf( "TODO", 0, ypos, width, "center" )
+--			end,
+--	}
 
 	self.items[ #self.items + 1 ] = {
 
 		toggle = function( app )
-				if app.config[ 'easy' ] then
-					app.config[ 'easy' ] = false
+				if app.config[ 'easy_swaps' ] then
+					app.config[ 'easy_swaps' ] = false
 				else
-					app.config[ 'easy' ] = true
+					app.config[ 'easy_swaps' ] = true
 				end
-			print( "toggled easy config: ", app.config['easy'] )
+			print( "toggled easy_swaps config: ", app.config['easy_swaps'] )
 		end,
 
 		keypressed = function (self, app, key)
@@ -39,8 +39,20 @@ function Options:new()
 			end,
 
 		draw = function(app, ypos, width)
-				local s = string.format( "Easy Mode: %s", ( app.config['easy'] and "on" or "off" ) )
+				local s = string.format( "Easy Swapping: %s", ( app.config['easy_swaps'] and "on" or "off" ) )
 				love.graphics.printf( s, 0, ypos, width, "center" )
+			end,
+	}
+
+	self.items[ #self.items + 1 ] = {
+		keypressed = function (self, app, key)
+				if key == "return" then
+					app:goto( "title" )
+				end
+			end,
+
+		draw = function(app, ypos, width)
+				love.graphics.printf( "Back", 0, ypos, width, "center" )
 			end,
 	}
 

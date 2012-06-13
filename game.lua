@@ -298,7 +298,7 @@ GameStates = {
 					if game:check_matches() then
 						beholder.trigger( "CLEAR" )
 						game:goto( "clear" )
-					elseif game.config and game.config.easy then
+					elseif game.config and game.config.easy_swaps then
 						game:goto( "idle" )
 					else
 						print( "game.config = ", game.config )
